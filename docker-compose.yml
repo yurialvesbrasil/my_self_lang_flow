@@ -1,0 +1,58 @@
+version: "3.9"
+services:
+  langflow:
+    image: langflowai/langflow:latest
+    container_name: langflow
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # A porta interna padrão do Langflow é 7860
+      - LANGFLOW_PORT=7860
+      # URL do banco Postgres (observação: compose cria a rede e o host postgres é 'postgres')
+      - LANGFLOW_DATABASE_URL=${LANGFLOW_DATABASE_URL}
+      # Redis (usado por bundles, caching etc.)
+      - LANGFLOW_REDIS_URL=${LANGFLOW_REDIS_URL}
+      # Chave secreta web (mude para produção)
+      - LANGFLOW_SECRET_KEY=${LANGFLOW_SECRET_KEY}
+      # Outros exemplos de configuração úteis:
+      - LANGFLOW_AUTO_SAVING=true
+      - LANGFLOW_AUTO_SAVING_INTERVAL=1000
+      - LANGFLOW_LOAD_FLOWS_PATH=/app/flows
+    ports:
+      - "7860:7860"
+    volumes:
+      - ./flows:/app/flows
+      - langflow_data:/langflow-data
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: langflow_postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: langflow_redis
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}" ]
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data: 
+  redis_data:
+  langflow_data:
