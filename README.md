@@ -1,5 +1,7 @@
 ## LangFlow
 
+![Run LangChain Locally](docs/img/lang_flow.png)
+
 Para acessar a aplicação: http://localhost:7860/
 
 ### Visão geral
